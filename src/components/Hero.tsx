@@ -4,62 +4,75 @@ import { TiLocationArrow } from "react-icons/ti";
 import Button from "./Button";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { ScrollTrigger } from "gsap/all";
-
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
-const Hero = () => {
-  const [currentIndex, setCurrentIndex] = useState(1);
-  const [hasClicked, setHasClicked] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadedVideos, setLoadedVideos] = useState(0);
-  const totalVideos = 4;
+
+type VideoIndex = 1 | 2 | 3 | 4;
+
+interface GSAPAnimationConfig {
+  transformOrigin?: string;
+  scale?: number;
+  width?: string;
+  height?: string;
+  duration?: number;
+  ease?: string;
+  clipPath?: string;
+  borderRadius?: string;
+  visibility?: string;
+  onStart?: () => void;
+}
+
+const Hero: React.FC = (): JSX.Element => {
+  const [currentIndex, setCurrentIndex] = useState<VideoIndex>(1);
+  const [hasClicked, setHasClicked] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadedVideos, setLoadedVideos] = useState<number>(0);
+  const totalVideos: VideoIndex = 4;
 
   const nextVideoRef = useRef<HTMLVideoElement>(null);
 
-  const handleVideoLoad = () => {
+  const handleVideoLoad = (): void => {
     setLoadedVideos((prev) => prev + 1);
   };
 
-  // 0 % 4 = 0 + 1 = 1
-  // 1 % 4 = 1 + 1 = 2
-  // 2 % 4 = 2 + 1 = 3
-  // 3 % 4 = 3 + 1 = 4
-  // 4 % 4 = 0 + 1 = 1
-  const upcomingVideoIndex = (currentIndex % totalVideos) + 1;
+  const upcomingVideoIndex: VideoIndex = ((currentIndex % totalVideos) + 1) as VideoIndex;
 
-  const handleMiniVdClick = () => {
+  const handleMiniVdClick = (): void => {
     setHasClicked(true);
-
-    setCurrentIndex((prev) => (prev % totalVideos) + 1);
+    setCurrentIndex((prev) => ((prev % totalVideos) + 1) as VideoIndex);
   };
+
   useEffect(() => {
-    console.log("loadedVideos", loadedVideos);
-    console.log("totalVideos", totalVideos);
     if (loadedVideos === totalVideos - 4) {
       setIsLoading(false);
     }
-  }, [loadedVideos, totalVideos]);
+  }, [loadedVideos]);
 
   useGSAP(
     () => {
-      if (hasClicked) {
-        gsap.set("#next-video", { visibility: "visible" });
-        gsap.to("#next-video", {
+      if (hasClicked && nextVideoRef.current) {
+        const nextVideoConfig: GSAPAnimationConfig = {
+          visibility: "visible",
           transformOrigin: "center center",
           scale: 1,
           width: "100%",
           height: "100%",
           duration: 1,
           ease: "power1.inOut",
-          onStart: () => nextVideoRef.current.play(),
-        });
-        gsap.from("#current-video", {
+          onStart: () => nextVideoRef.current?.play(),
+        };
+
+        const currentVideoConfig: GSAPAnimationConfig = {
           transformOrigin: "center center",
           scale: 0,
           duration: 1.5,
           ease: "power1.inOut",
-        });
+        };
+
+        gsap.set("#next-video", { visibility: "visible" });
+        gsap.to("#next-video", nextVideoConfig);
+        gsap.from("#current-video", currentVideoConfig);
       }
     },
     {
@@ -69,11 +82,12 @@ const Hero = () => {
   );
 
   useGSAP(() => {
-    gsap.set("#video-frame", {
+    const frameConfig: GSAPAnimationConfig = {
       clipPath: "polygon(14% 0, 72% 0, 88% 90%, 0 95%)",
       borderRadius: "0% 0% 40% 10%",
-    });
-    gsap.from("#video-frame", {
+    };
+
+    const frameAnimConfig: GSAPAnimationConfig & { scrollTrigger: ScrollTrigger.Vars } = {
       clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
       borderRadius: "0% 0% 0% 0%",
       ease: "power1.inOut",
@@ -83,10 +97,13 @@ const Hero = () => {
         end: "bottom center",
         scrub: true,
       },
-    });
+    };
+
+    gsap.set("#video-frame", frameConfig);
+    gsap.from("#video-frame", frameAnimConfig);
   });
 
-  const getVideoSrc = (index: any) => `videos/hero-${index}.mp4`;
+  const getVideoSrc = (index: VideoIndex): string => `videos/hero-${index}.mp4`;
 
   return (
     <div className="relative h-dvh w-screen">
